@@ -1,17 +1,9 @@
 name: Lint
 
 on:
-  # Trigger the workflow on push or pull request to main and production branches
   push:
     branches:
-      - main
       - production
-      - Jack_lint_pipeline
-  pull_request:
-    branches:
-      - main
-      - production
-      - Jack_lint_pipeline
 
 permissions:
   checks: write
