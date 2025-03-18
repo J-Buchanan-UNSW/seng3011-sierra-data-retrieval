@@ -5,7 +5,7 @@ This microservice retrieves the *PARQUETIFIED* **ESG** data from an s3 bucket th
 
 ## Features
 - Callable data retireval via servless hosting
-- AWS lambda deployment *serverless hosting*
+- AWS lambda deployment *serverless hosting* - reduced costs 
 - Querable data
 - Linting and Code Quality checks
 
