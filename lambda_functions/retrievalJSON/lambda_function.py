@@ -8,6 +8,7 @@ s3_client = boto3.client("s3")
 BUCKET_NAME = "sierra-e-bucket"
 JSON_FILE_PATH = "processedJSON/environmental_risk.json"
 
+
 def lambda_handler(event, context):
     try:
         # Fetch JSON file from S3

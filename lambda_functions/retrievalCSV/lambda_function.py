@@ -10,6 +10,7 @@ s3_client = boto3.client("s3")
 BUCKET_NAME = "sierra-e-bucket"
 CSV_FILE_PATH = "processedCSV/environmental_risk.csv"
 
+
 def lambda_handler(event, context):
     try:
         # Fetch CSV file from S3
