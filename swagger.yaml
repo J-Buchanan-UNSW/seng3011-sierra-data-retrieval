@@ -1,0 +1,135 @@
+openapi: 3.0.0 
+
+info: 
+  title: Sierra Impact Data retrieval API
+  description: API documentation for the retireval microservice. 
+  version: 1.0.0 
+  contact: 
+    name: Jack Buchanan
+    email: z5478552@ad.unsw.edu.au
+
+paths:
+  /get-csv-data:
+    get:
+      summary: Retrieve ESG Data in CSV Format
+      description: Fetches the ESG dataset and returns it as a CSV file.
+      operationId: getCsvData
+      responses:
+        "200":
+          description: Successfully retrieved CSV data.
+          content:
+            text/csv:
+              schema:
+                type: string
+                format: binary
+                example: "company_name,metric_value,metric_year\nCompany A,100,2023"
+        "400":
+          description: Bad request, invalid parameters.
+        "500":
+          description: Server error, unable to fetch CSV data.
+
+  /get-json-data:
+    get:
+      summary: Retrieve ESG Data in ADAGE JSON Format
+      description: Fetches the ESG dataset and returns it as an ADAGE-formatted JSON object.
+      operationId: getJsonData
+      responses:
+        "200":
+          description: Successfully retrieved JSON data in ADAGE format.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data_source:
+                    type: string
+                    example: "ClarityAI_Dataset"
+                  dataset_type:
+                    type: string
+                    example: "Environmental_Risk"
+                  dataset_id:
+                    type: string
+                    example: "https://s3.amazonaws.com/sierrabucket2025/environmental_risk.json"
+                  time_object:
+                    type: object
+                    properties:
+                      timestamp:
+                        type: string
+                        format: date-time
+                        example: "2025-03-20T10:15:30.123Z"
+                      timezone:
+                        type: string
+                        example: "GMT+11"
+                  events:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        time_object:
+                          type: object
+                          properties:
+                            timestamp:
+                              type: string
+                              format: date-time
+                              example: "2025-03-20T10:15:30.123Z"
+                            duration:
+                              type: integer
+                              example: 1
+                            duration_unit:
+                              type: string
+                              example: "day"
+                            timezone:
+                              type: string
+                              example: "GMT+11"
+                        event_type:
+                          type: string
+                          example: "ESG data"
+                        attribute:
+                          type: object
+                          properties:
+                            company_name:
+                              type: string
+                              example: "Company A"
+                            perm_id:
+                              type: string
+                              example: "123456789"
+                            data_type:
+                              type: string
+                              example: "Carbon Emission"
+                            disclosure:
+                              type: string
+                              example: "Disclosed"
+                            metric_description:
+                              type: string
+                              example: "Total carbon emissions"
+                            metric_name:
+                              type: string
+                              example: "CO2 Emissions"
+                            metric_unit:
+                              type: string
+                              example: "tons"
+                            metric_value:
+                              type: number
+                              example: 1000
+                            metric_year:
+                              type: integer
+                              example: 2023
+                            nb_points_of_observations:
+                              type: integer
+                              example: 10
+                            metric_period:
+                              type: string
+                              example: "Annual"
+                            provider_name:
+                              type: string
+                              example: "ClarityAI"
+                            pillar:
+                              type: string
+                              example: "Environmental"
+                            headquarter_country:
+                              type: string
+                              example: "Australia"
+        "400":
+          description: Bad request, invalid parameters.
+        "500":
+          description: Server error, unable to fetch JSON data.
