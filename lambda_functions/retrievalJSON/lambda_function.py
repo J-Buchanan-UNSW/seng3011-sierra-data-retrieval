@@ -8,7 +8,7 @@ s3_client = boto3.client("s3")
 
 # Define S3 bucket and JSON file path
 BUCKET_NAME = os.getenv("BUCKET_NAME", "dev-sierra-e-bucket")
-JSON_FILE_PATH = "processedJSON/envirognmental_risk.json"
+JSON_FILE_PATH = "processedJSON/environmental_risk.json"
 
 
 def lambda_handler(event, context):
