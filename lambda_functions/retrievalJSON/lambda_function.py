@@ -1,11 +1,13 @@
 import json
+import os
+
 import boto3
 
 # Initialize AWS S3 client
 s3_client = boto3.client("s3")
 
 # Define S3 bucket and JSON file path
-BUCKET_NAME = "sierra-e-bucket"
+BUCKET_NAME = os.getenv("BUCKET_NAME", "dev-sierra-e-bucket")
 JSON_FILE_PATH = "processedJSON/environmental_risk.json"
 
 
