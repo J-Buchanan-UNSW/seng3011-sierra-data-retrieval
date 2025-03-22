@@ -1,0 +1,68 @@
+name: Deploy to Development
+
+on:
+  push:
+    branches: [ dev ]
+
+jobs:
+  run-linters:
+    name: Run Python linters
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out Git repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.x'
+
+      - name: Install linters
+        run: |
+          python -m pip install --upgrade pip
+          pip install flake8 black
+
+      - name: Run Flake8 (Checks for style issues)
+        run: flake8 .
+
+      - name: Black Autoformat
+        run: black .
+
+      - name: Run Black (Code formatting check)
+        run: black --check .
+
+  deploy:
+    needs: run-linters
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      - name: Install zip tool
+        run: sudo apt-get install -y zip
+
+      - name: Deploy CSV Retrieval Lambda to Development
+        run: |
+          cd lambda_functions/retrievalCSV
+          zip -r ../../retrievalCSV.zip .
+          aws lambda update-function-code \
+            --function-name arn:aws:lambda:ap-southeast-2:992382806042:function:DevRetrievalCSV \
+            --zip-file fileb://../../retrievalCSV.zip
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: "ap-southeast-2"
+
+      - name: Deploy JSON Retrieval Lambda to Development
+        run: |
+          cd lambda_functions/retrievalJSON
+          zip -r ../../retrievalJSON.zip .
+          aws lambda update-function-code \
+            --function-name arn:aws:lambda:ap-southeast-2:992382806042:function:DevRetrievalJSON \
+            --zip-file fileb://../../retrievalJSON.zip
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: "ap-southeast-2"
