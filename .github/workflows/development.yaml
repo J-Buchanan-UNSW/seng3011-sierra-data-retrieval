@@ -1,8 +1,8 @@
-name: Deploy Lambda Functions
+name: Deploy to Development
 
 on:
   push:
-    branches: [ production ]
+    branches: [ development ]
 
 jobs:
   deploy:
@@ -15,25 +15,33 @@ jobs:
       - name: Install zip tool
         run: sudo apt-get install -y zip
 
-      - name: Deploy CSV Retrieval Lambda
+      - name: Deploy CSV Retrieval Lambda to Development
         run: |
           cd lambda_functions/retrievalCSV
           zip -r ../../retrievalCSV.zip .
           aws lambda update-function-code \
-            --function-name arn:aws:lambda:ap-southeast-2:992382806042:function:retrievalCSV \
+            --function-name arn:aws:lambda:ap-southeast-2:992382806042:function:DevRetrievalCSV \
             --zip-file fileb://../../retrievalCSV.zip
+
+          aws lambda update-function-configuration \
+            --function-name arn:aws:lambda:ap-southeast-2:992382806042:function:DevRetrievalCSV \
+            --environment "Variables={BUCKET_NAME=dev-sierra-e-bucket}"
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           AWS_DEFAULT_REGION: "ap-southeast-2"
 
-      - name: Deploy JSON Retrieval Lambda
+      - name: Deploy JSON Retrieval Lambda to Development
         run: |
           cd lambda_functions/retrievalJSON
           zip -r ../../retrievalJSON.zip .
           aws lambda update-function-code \
-            --function-name arn:aws:lambda:ap-southeast-2:992382806042:function:retrievalJSON \
+            --function-name arn:aws:lambda:ap-southeast-2:992382806042:function:DevRetrievalJSON \
             --zip-file fileb://../../retrievalJSON.zip
+
+          aws lambda update-function-configuration \
+            --function-name arn:aws:lambda:ap-southeast-2:992382806042:function:DevRetrievalJSON \
+            --environment "Variables={BUCKET_NAME=dev-sierra-e-bucket}"
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}

@@ -1,0 +1,48 @@
+name: Deploy to Production
+
+on:
+  pull_request:
+    branches: [ production ]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      - name: Install zip tool
+        run: sudo apt-get install -y zip
+
+      - name: Deploy CSV Retrieval Lambda to Production
+        run: |
+          cd lambda_functions/retrievalCSV
+          zip -r ../../retrievalCSV.zip .
+          aws lambda update-function-code \
+            --function-name arn:aws:lambda:ap-southeast-2:992382806042:function:retrievalCSV \
+            --zip-file fileb://../../retrievalCSV.zip
+
+          aws lambda update-function-configuration \
+            --function-name arn:aws:lambda:ap-southeast-2:992382806042:function:retrievalCSV \
+            --environment "Variables={BUCKET_NAME=sierra-e-bucket}"
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: "ap-southeast-2"
+
+      - name: Deploy JSON Retrieval Lambda to Production
+        run: |
+          cd lambda_functions/retrievalJSON
+          zip -r ../../retrievalJSON.zip .
+          aws lambda update-function-code \
+            --function-name arn:aws:lambda:ap-southeast-2:992382806042:function:retrievalJSON \
+            --zip-file fileb://../../retrievalJSON.zip
+
+          aws lambda update-function-configuration \
+            --function-name arn:aws:lambda:ap-southeast-2:992382806042:function:retrievalJSON \
+            --environment "Variables={BUCKET_NAME=sierra-e-bucket}"
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: "ap-southeast-2"
