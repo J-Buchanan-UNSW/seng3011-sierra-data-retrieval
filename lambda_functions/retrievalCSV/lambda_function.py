@@ -14,6 +14,10 @@ CSV_FILE_PATH = "processedCSV/environmental_risk.csv"
 
 def lambda_handler(event, context):
     try:
+        # Log query parameters to verify they are received
+        params = event.get("queryStringParameters", {}) or {}
+        print("Query Parameters:", params)
+
         # Fetch CSV file from S3
         response = s3_client.get_object(Bucket=BUCKET_NAME, Key=CSV_FILE_PATH)
         csv_content = response['Body'].read().decode('utf-8')
