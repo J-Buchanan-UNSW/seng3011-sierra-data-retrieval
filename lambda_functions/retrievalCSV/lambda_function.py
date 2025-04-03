@@ -58,15 +58,9 @@ def lambda_handler(event, _context, s3_client=None):
         error message
     """
     try:
-<<<<<<< HEAD
-        # Log query parameters to verify they are received
-        params = event.get("queryStringParameters", {}) or {}
-        print("Query Parameters:", params)
-=======
         # Use injected client for testing or create a new one
         if s3_client is None:
             s3_client = get_s3_client()
->>>>>>> 592362c (Include testing for retrievalCSV)
 
         # Fetch CSV file from S3
         response = s3_client.get_object(Bucket=BUCKET_NAME, Key=CSV_FILE_PATH)
