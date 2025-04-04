@@ -1,22 +1,66 @@
+"""
+Environmental Risk Data API Lambda Handler
+
+This module provides an AWS Lambda function that serves environmental risk data
+from a CSV file stored in S3. It supports filtering, column selection, and
+sorting via query parameters.
+"""
+
 import json
 import os
-import pandas as pd
 from io import StringIO
 import boto3
+import pandas as pd
 
-# Initialize S3 client
-s3_client = boto3.client("s3")
+
+def get_s3_client():
+    """
+    Initialize and return an S3 client using boto3.
+
+    Returns:
+        boto3.client: Configured S3 client
+    """
+    return boto3.client("s3")
+
 
 # Define S3 bucket and file path
 BUCKET_NAME = os.getenv("BUCKET_NAME", "dev-sierra-e-bucket")
 CSV_FILE_PATH = "processedCSV/environmental_risk.csv"
 
 
-def lambda_handler(event, context):
+def lambda_handler(event, _context, s3_client=None):
+    """
+    AWS Lambda handler function that processes requests for environmental
+    risk data.
+
+    This function retrieves a CSV file from S3, loads it into a pandas
+    DataFrame,
+    and applies filtering, column selection, and sorting based on query
+    parameters.
+
+    Parameters:
+        event (dict): AWS Lambda event object containing query parameters
+        _context (object): AWS Lambda context object (unused)
+        s3_client (boto3.client, optional): S3 client for dependency injection
+        during testing
+
+    Query Parameters:
+        filter (str): Pandas query expression for filtering rows
+        columns (str): Comma-separated list of columns to include
+        order_by (str): Comma-separated list of columns to sort by, with
+        optional "desc" modifier
+
+    Returns:
+        dict: Lambda response object with status code, headers and JSON body
+
+    Raises:
+        Various exceptions that are caught and returned as 500 errors with
+        error message
+    """
     try:
-        # Log query parameters to verify they are received
-        params = event.get("queryStringParameters", {}) or {}
-        print("Query Parameters:", params)
+        # Use injected client for testing or create a new one
+        if s3_client is None:
+            s3_client = get_s3_client()
 
         # Fetch CSV file from S3
         response = s3_client.get_object(Bucket=BUCKET_NAME, Key=CSV_FILE_PATH)
