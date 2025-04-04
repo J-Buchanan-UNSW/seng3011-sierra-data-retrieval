@@ -1,0 +1,5 @@
+{
+    "python.analysis.extraPaths": [
+        "./lambda_functions/retrievalJSON"
+    ]
+}
