@@ -1,0 +1,15 @@
+[run]
+source =
+    lambda_functions
+omit =
+    */tests/*
+    */site-packages/*
+    __init__.py
+
+[report]
+exclude_lines =
+    pragma: no cover
+    if __name__ == .__main__.:
+    def __repr__
+    def __str__
+    pass
