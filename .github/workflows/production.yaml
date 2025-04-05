@@ -33,6 +33,7 @@ jobs:
         run: black --check .
 
   deploy:
+    if: ${{ false }}
     needs: run-linters
     runs-on: ubuntu-latest
 
