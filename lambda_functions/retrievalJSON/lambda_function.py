@@ -127,8 +127,7 @@ def lambda_handler(event, _context, s3_client=None):
             except Exception:
                 return {
                     "statusCode": 400,
-                    "body": json.dumps({"error": "Invalid filter query" +
-                                        " syntax"}),
+                    "body": json.dumps({"error": "Invalid filter expression"}),
                     "headers": {"Content-Type": "application/json"}
                 }
 
