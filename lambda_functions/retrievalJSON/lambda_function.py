@@ -68,7 +68,7 @@ def lambda_handler(event, _context, s3_client=None):
             print("❌ JSON content is empty.")
             return {
                 "statusCode": 200,
-                "body": {},
+                "body": json.dumps({"status": "No content found"}),
                 "headers": {
                     "Content-Type": "application/json",
                     "Access-Control-Allow-Origin": "*",
@@ -140,7 +140,7 @@ def lambda_handler(event, _context, s3_client=None):
             print("❌ DataFrame is empty after loading JSON.")
             return {
                 "statusCode": 200,
-                "body": {},
+                "body": json.dumps({"status": "No content found"}),
                 "headers": {
                     "Content-Type": "application/json",
                     "Access-Control-Allow-Origin": "*",
@@ -175,7 +175,7 @@ def lambda_handler(event, _context, s3_client=None):
                     print("⚠️ No results after filtering.")
                     return {
                         "statusCode": 200,
-                        "body": {},
+                        "body": json.dumps({"status": "No content found"}),
                         "headers": {
                             "Content-Type": "application/json",
                             "Access-Control-Allow-Origin": "*",

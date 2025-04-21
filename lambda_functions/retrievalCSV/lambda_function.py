@@ -78,7 +78,7 @@ def lambda_handler(event, _context, s3_client=None):
                     "Access-Control-Allow-Headers":
                     "Content-Type, Authorization"
                 },
-                "body": {}
+                "body": json.dumps({"status": "No content found"})
             }
 
         df = pd.read_csv(StringIO(csv_content))
@@ -97,7 +97,7 @@ def lambda_handler(event, _context, s3_client=None):
                     "Access-Control-Allow-Headers":
                     "Content-Type, Authorization"
                 },
-                "body": {}
+                "body": json.dumps({"status": "No content found"})
             }
 
         valid_columns = set(df.columns)
@@ -132,7 +132,7 @@ def lambda_handler(event, _context, s3_client=None):
                             "Access-Control-Allow-Headers":
                             "Content-Type, Authorization"
                         },
-                        "body": {}
+                        "body": json.dumps({"status": "No content found"})
                     }
             except Exception as e:
                 print(f"❌ Error applying filter: {e}")

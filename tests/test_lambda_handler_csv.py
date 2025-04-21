@@ -225,7 +225,7 @@ def test_lambda_handler_no_csv_content():
 
     assert response['statusCode'] == 200
     assert response['headers']['Content-Type'] == 'application/json'
-    assert response['body'] == {}
+    assert "No content found" in response['body']
 
 
 def test_lambda_handler_no_csv_content_after_filtering():
@@ -245,7 +245,7 @@ def test_lambda_handler_no_csv_content_after_filtering():
 
     assert response['statusCode'] == 200
     assert response['headers']['Content-Type'] == 'application/json'
-    assert response['body'] == {}
+    assert "No content found" in response['body']
 
 
 def test_lambda_handler_empty_dataframe():
@@ -259,7 +259,7 @@ def test_lambda_handler_empty_dataframe():
     response = lambda_handler(event, {}, s3_client=mock_s3_client)
 
     assert response['statusCode'] == 200
-    assert response['body'] == {}
+    assert "No content found" in response['body']
 
 
 def test_lambda_handler_invalid_filter_crashes_query():
