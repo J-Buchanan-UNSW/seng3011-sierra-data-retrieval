@@ -1,0 +1,56 @@
+name: Linters and Tests
+
+on:
+  pull_request:
+    branches: [ dev, production ]
+
+jobs:
+  run-linters:
+    name: Run Python linters
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out Git repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.x'
+
+      - name: Install linters
+        run: |
+          python -m pip install --upgrade pip
+          pip install flake8 black
+
+      - name: Run Flake8 (Checks for style issues)
+        run: flake8 .
+
+      - name: Black Autoformat
+        run: black .
+
+      - name: Run Black (Code formatting check)
+        run: black --check .
+
+  test:
+    name: Run Tests
+    runs-on: ubuntu-latest
+    needs: run-linters
+    steps:
+      - name: Check out Git repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.x'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install moto boto3 pandas
+          pip install pytest pytest-cov
+
+      - name: Run pytest
+        run: |
+          pytest --maxfail=1 --disable-warnings -q
