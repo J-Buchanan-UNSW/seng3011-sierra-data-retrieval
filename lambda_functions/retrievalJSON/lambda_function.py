@@ -92,7 +92,16 @@ def lambda_handler(event, _context, s3_client=None):
                 "headers": {"Content-Type": "application/json"}
             }
 
-        df = pd.json_normalize(parsed_json)
+        df = pd.json_normalize(parsed_json, record_path=["events"],
+                               meta=["data_source", "dataset_type",
+                                     "dataset_id"], errors='ignore')
+
+        # Flatten 'attribute' into individual columns
+        attribute_columns = [col for col in df.columns if
+                             col.startswith("attribute.")]
+        df = pd.concat([df.drop(attribute_columns, axis=1),
+                        df[attribute_columns].apply(pd.Series)], axis=1)
+
         print("🧾 Loaded DataFrame with {len(df)} rows" +
               f" and columns: {df.columns.tolist()}")
 
@@ -113,84 +122,54 @@ def lambda_handler(event, _context, s3_client=None):
         order_by = params.get("order_by")
 
         if filter_query:
-            print(f"🔍 Validating filter: '{filter_query}'")
+            print("🔍 Validating filter expression...")
+
             if not is_valid_filter_expression(filter_query, valid_columns):
-                print("❌ Invalid filter expression.")
+                print("❌ Invalid filter expression")
                 return {
                     "statusCode": 400,
                     "body": json.dumps({"error": "Invalid filter expression"}),
                     "headers": {"Content-Type": "application/json"}
                 }
-            try:
-                df = df.query(filter_query)
-                print(f"✅ Filtered DataFrame has {len(df)} rows.")
-                if df.empty:
-                    print("⚠️ No results after filtering.")
-                    return {
-                        "statusCode": 400,
-                        "body": json.dumps({"error": "No content found"}),
-                        "headers": {"Content-Type": "application/json"}
-                    }
-            except Exception as e:
-                print(f"❌ Error applying filter: {e}")
-                return {
-                    "statusCode": 400,
-                    "body": json.dumps({"error": "Invalid filter expression"}),
-                    "headers": {"Content-Type": "application/json"}
-                }
+
+            # Apply the filter to the DataFrame
+            df = df.query(filter_query)
+            print(f"✅ Filter applied. {len(df)} rows remaining.")
 
         if columns:
-            print(f"🧩 Validating requested columns: '{columns}'")
             if not is_valid_columns(columns, valid_columns):
-                print("❌ Invalid columns parameter.")
+                print("❌ Invalid columns")
                 return {
                     "statusCode": 400,
-                    "body": json.dumps({"error": "Invalid columns parameter"}),
+                    "body": json.dumps({"error": "Invalid columns"}),
                     "headers": {"Content-Type": "application/json"}
                 }
-            col_list = [col.strip() for col in columns.split(",")]
-            df = df[col_list]
-            print(f"✅ Selected columns: {col_list}")
+
+            # Select only the specified columns
+            df = df[columns.split(",")]
 
         if order_by:
-            print(f"📐 Validating order_by: '{order_by}'")
             if not is_valid_order_by(order_by, valid_columns):
-                print("❌ Invalid order_by expression.")
+                print("❌ Invalid order_by")
                 return {
                     "statusCode": 400,
-                    "body": json.dumps({
-                        "error": "Invalid order_by expression"}),
+                    "body": json.dumps({"error": "Invalid order_by"}),
                     "headers": {"Content-Type": "application/json"}
                 }
-            order_items = order_by.split(",")
-            sort_by = []
-            ascending = []
-            for item in order_items:
-                parts = item.strip().split()
-                sort_by.append(parts[0])
-                if len(parts) > 1 and parts[1].lower() == "desc":
-                    ascending.append(False)
-                else:
-                    ascending.append(True)
-            df = df.sort_values(by=sort_by, ascending=ascending)
-            print(f"✅ Sorted by: {sort_by} | Ascending: {ascending}")
 
-        print(f"📤 Returning {len(df)} rows of processed data.")
-        json_result = df.to_json(orient="records")
+            # Apply sorting to the DataFrame
+            df = df.sort_values(
+                by=[col.strip() for col in order_by.split(',')],
+                ascending=True)
 
         return {
             "statusCode": 200,
-            "headers": {
-                "Content-Type": "application/json",
-                "Access-Control-Allow-Origin": "*",
-                "Access-Control-Allow-Methods": "OPTIONS, GET, POST",
-                "Access-Control-Allow-Headers": "Content-Type, Authorization"
-            },
-            "body": json_result
+            "body": df.to_json(orient="records"),
+            "headers": {"Content-Type": "application/json"}
         }
 
     except Exception as e:
-        print(f"❌ Unhandled Exception: {str(e)}")
+        print(f"❌ Error: {str(e)}")
         return {
             "statusCode": 500,
             "body": json.dumps({"error": str(e)}),
