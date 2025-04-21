@@ -67,9 +67,15 @@ def lambda_handler(event, _context, s3_client=None):
         if not json_content.strip():
             print("❌ JSON content is empty.")
             return {
-                "statusCode": 400,
-                "body": json.dumps({"error": "No content found"}),
-                "headers": {"Content-Type": "application/json"}
+                "statusCode": 200,
+                "body": {},
+                "headers": {
+                    "Content-Type": "application/json",
+                    "Access-Control-Allow-Origin": "*",
+                    "Access-Control-Allow-Methods": "OPTIONS, GET, POST",
+                    "Access-Control-Allow-Headers":
+                    "Content-Type, Authorization"
+                },
             }
 
         try:
@@ -133,9 +139,15 @@ def lambda_handler(event, _context, s3_client=None):
         if df.empty:
             print("❌ DataFrame is empty after loading JSON.")
             return {
-                "statusCode": 400,
-                "body": json.dumps({"error": "No content found"}),
-                "headers": {"Content-Type": "application/json"}
+                "statusCode": 200,
+                "body": {},
+                "headers": {
+                    "Content-Type": "application/json",
+                    "Access-Control-Allow-Origin": "*",
+                    "Access-Control-Allow-Methods": "OPTIONS, GET, POST",
+                    "Access-Control-Allow-Headers":
+                    "Content-Type, Authorization"
+                },
             }
 
         valid_columns = set(df.columns)
@@ -162,9 +174,16 @@ def lambda_handler(event, _context, s3_client=None):
                 if df.empty:
                     print("⚠️ No results after filtering.")
                     return {
-                        "statusCode": 400,
-                        "body": json.dumps({"error": "No content found"}),
-                        "headers": {"Content-Type": "application/json"}
+                        "statusCode": 200,
+                        "body": {},
+                        "headers": {
+                            "Content-Type": "application/json",
+                            "Access-Control-Allow-Origin": "*",
+                            "Access-Control-Allow-Methods":
+                            "OPTIONS, GET, POST",
+                            "Access-Control-Allow-Headers":
+                            "Content-Type, Authorization"
+                        },
                     }
             except Exception as e:
                 print(f"❌ Error applying filter: {e}")

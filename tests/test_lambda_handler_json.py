@@ -453,9 +453,9 @@ def test_lambda_handler_no_json_content():
     context = {}
     response = lambda_handler(event, context, s3_client=mock_s3_client)
 
-    assert response['statusCode'] == 400
+    assert response['statusCode'] == 200
     assert response['headers']['Content-Type'] == 'application/json'
-    assert "No content found" in response['body']
+    assert response['body'] == {}
 
 
 def test_lambda_handler_no_json_content_after_filtering():
@@ -489,9 +489,9 @@ def test_lambda_handler_no_json_content_after_filtering():
     context = {}
     response = lambda_handler(event, context, s3_client=mock_s3_client)
 
-    assert response['statusCode'] == 400
+    assert response['statusCode'] == 200
     assert response['headers']['Content-Type'] == 'application/json'
-    assert "No content found" in response['body']
+    assert response['body'] == {}
 
 
 def test_lambda_handler_empty_dataframe_json():
@@ -506,8 +506,8 @@ def test_lambda_handler_empty_dataframe_json():
     context = {}
     response = lambda_handler(event, context, s3_client=mock_s3_client)
 
-    assert response['statusCode'] == 400
-    assert "No content found" in response['body']
+    assert response['statusCode'] == 200
+    assert response['body'] == {}
 
 
 def test_lambda_handler_invalid_filter_crashes_query_json():
