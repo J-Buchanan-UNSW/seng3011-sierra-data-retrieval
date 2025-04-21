@@ -1,6 +1,5 @@
 import json
 import os
-from io import StringIO
 import boto3
 import pandas as pd
 
@@ -74,7 +73,26 @@ def lambda_handler(event, _context, s3_client=None):
                 "headers": {"Content-Type": "application/json"}
             }
 
-        df = pd.read_json(StringIO(json_content))
+        try:
+            parsed_json = json.loads(json_content)
+            if isinstance(parsed_json, dict):
+                parsed_json = [parsed_json]
+            elif not isinstance(parsed_json, list):
+                print("❌ Unexpected JSON structure.")
+                return {
+                    "statusCode": 400,
+                    "body": json.dumps({"error": "Invalid JSON structure"}),
+                    "headers": {"Content-Type": "application/json"}
+                }
+        except json.JSONDecodeError as e:
+            print(f"❌ Error decoding JSON: {e}")
+            return {
+                "statusCode": 400,
+                "body": json.dumps({"error": "Error decoding JSON"}),
+                "headers": {"Content-Type": "application/json"}
+            }
+
+        df = pd.json_normalize(parsed_json)
         print("🧾 Loaded DataFrame with {len(df)} rows" +
               f" and columns: {df.columns.tolist()}")
 
