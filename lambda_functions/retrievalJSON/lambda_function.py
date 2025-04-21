@@ -75,6 +75,7 @@ def lambda_handler(event, _context, s3_client=None):
         try:
             parsed_json = json.loads(json_content)
             if isinstance(parsed_json, dict):
+                # If it's a single object, we need to handle it differently
                 parsed_json = [parsed_json]
             elif not isinstance(parsed_json, list):
                 print("❌ Unexpected JSON structure.")
@@ -91,21 +92,43 @@ def lambda_handler(event, _context, s3_client=None):
                 "headers": {"Content-Type": "application/json"}
             }
 
-        if "events" in parsed_json:
-            df = pd.json_normalize(parsed_json, record_path=["events"],
-                                   meta=["data_source", "dataset_type",
-                                         "dataset_id"], errors='ignore')
-        else:
-            df = pd.json_normalize(parsed_json)
+        # Create a list to store the flattened records
+        flattened_records = []
+        
+        # Process each record in the JSON list
+        for record in parsed_json:
+            if "events" in record:
+                # Each event needs to be flattened
+                for e in record.get("events", []):
+                    flat_record = {
+                        "data_source": record.get("data_source", ""),
+                        "dataset_type": record.get("dataset_type", ""),
+                        "dataset_id": record.get("dataset_id", "")
+                    }
+                    # Add time_object fields if they exist
+                    objects = e["time_object"].items()
+                    if "time_object" in e:
+                        for time_key, time_value in objects:
+                            flat_record[f"time_{time_key}"] = time_value
+                    # Add event_type if it exists
+                    if "event_type" in e:
+                        flat_record["event_type"] = e["event_type"]
+                    
+                    # Add attribute fields directly to the flattened record
+                    if "attribute" in e:
+                        for attr_key, attr_value in e["attribute"].items():
+                            flat_record[attr_key] = attr_value
+                    
+                    flattened_records.append(flat_record)
+            else:
+                # Handle case where there are no events - just add the record
+                flattened_records.append(record)
 
-        # Flatten 'attribute' into individual columns
-        attribute_columns = [col for col in df.columns
-                             if col.startswith("attribute.")]
-        df = pd.concat([df.drop(attribute_columns, axis=1),
-                        df[attribute_columns].apply(pd.Series)], axis=1)
+        # Convert to DataFrame
+        df = pd.DataFrame(flattened_records)
 
-        print("🧾 Loaded DataFrame with {len(df)} rows" +
-              f" and columns: {df.columns.tolist()}")
+        print(f"🧾 Loaded DataFrame with {len(df)} rows and " +
+              f"columns: {df.columns.tolist()}")
 
         if df.empty:
             print("❌ DataFrame is empty after loading JSON.")
@@ -151,10 +174,6 @@ def lambda_handler(event, _context, s3_client=None):
                     "headers": {"Content-Type": "application/json"}
                 }
 
-            # Apply the filter to the DataFrame
-            df = df.query(filter_query)
-            print(f"✅ Filter applied. {len(df)} rows remaining.")
-
         if columns:
             if not is_valid_columns(columns, valid_columns):
                 print("❌ Invalid columns")
@@ -166,7 +185,7 @@ def lambda_handler(event, _context, s3_client=None):
                 }
 
             # Select only the specified columns
-            df = df[columns.split(",")]
+            df = df[[col.strip() for col in columns.split(",")]]
 
         if order_by:
             print(f"🔎 Validating and applying order_by: {order_by}")
@@ -179,17 +198,19 @@ def lambda_handler(event, _context, s3_client=None):
                     "headers": {"Content-Type": "application/json"}
                 }
 
-            # Split 'value desc' or 'value asc' and apply sorting
-            order_by_parts = order_by.split()
-            column = order_by_parts[0]
-            if len(order_by_parts) > 1:
-                direction = order_by_parts[1].lower()
-            else:
-                direction = 'asc'
-            df = df.sort_values(by=column, ascending=(direction == 'asc'))
-
-            print(f"✅ Sorting applied. Data sorted by {column}" +
-                  f"in {direction} order.")
+            # Process order_by parts
+            order_parts = []
+            ascending_flags = []
+            
+            for item in order_by.split(','):
+                parts = item.strip().split()
+                column = parts[0]
+                direction = parts[1].lower() if len(parts) == 2 else 'asc'
+                order_parts.append(column)
+                ascending_flags.append(direction == 'asc')
+            
+            df = df.sort_values(by=order_parts, ascending=ascending_flags)
+            print(f"✅ Sorting applied. Data sorted by {order_parts}.")
 
         return {
             "statusCode": 200,

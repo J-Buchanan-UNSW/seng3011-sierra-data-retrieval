@@ -13,8 +13,35 @@ def parse_json_response(json_string):
 
 
 def test_lambda_handler_no_params():
-    json_content = '[{"col1": "val1", "col2": "val2", "col3": "val3"}, ' \
-                    '{"col1": "val4", "col2": "val5", "col3": "val6"}]'
+    # Creating sample ESG data format
+    json_content = json.dumps({
+        "data_source": "ClarityAI_Dataset",
+        "dataset_type": "Environmental_Risk",
+        "dataset_id": "https://bucket-url",
+        "events": [
+            {
+                "time_object": {"timestamp": "2023-01-01",
+                                "timezone": "GMT+11"},
+                "event_type": "ESG data",
+                "attribute": {
+                    "company_name": "TestCorp",
+                    "metric_name": "CO2DIRECTSCOPE1",
+                    "metric_value": "100"
+                }
+            },
+            {
+                "time_object": {"timestamp": "2023-01-01",
+                                "timezone": "GMT+11"},
+                "event_type": "ESG data",
+                "attribute": {
+                    "company_name": "TestCorp",
+                    "metric_name": "WATERWITHDRAWALTOTAL",
+                    "metric_value": "500"
+                }
+            }
+        ]
+    })
+
     mock_s3_client = MagicMock()
     mock_body = MagicMock()
     mock_body.read.return_value = json_content.encode('utf-8')
@@ -29,8 +56,9 @@ def test_lambda_handler_no_params():
 
     parsed = parse_json_response(response['body'])
     assert len(parsed) == 2
-    assert parsed[0]['col1'] == 'val1'
-    assert parsed[1]['col1'] == 'val4'
+    assert parsed[0]['company_name'] == 'TestCorp'
+    assert parsed[0]['metric_name'] == 'CO2DIRECTSCOPE1'
+    assert parsed[1]['metric_name'] == 'WATERWITHDRAWALTOTAL'
 
 
 def test_lambda_handler_default_s3_client(monkeypatch):
@@ -39,7 +67,23 @@ def test_lambda_handler_default_s3_client(monkeypatch):
     monkeypatch.setattr("boto3.client", lambda service_name: mock_client)
 
     mock_body = MagicMock()
-    json_content = '[{"col1": "val1", "col2": "val2", "col3": "val3"}]'
+    json_content = json.dumps({
+        "data_source": "ClarityAI_Dataset",
+        "dataset_type": "Environmental_Risk",
+        "dataset_id": "https://bucket-url",
+        "events": [
+            {
+                "time_object": {"timestamp": "2023-01-01",
+                                "timezone": "GMT+11"},
+                "event_type": "ESG data",
+                "attribute": {
+                    "company_name": "TestCorp",
+                    "metric_name": "CO2DIRECTSCOPE1",
+                    "metric_value": "100"
+                }
+            }
+        ]
+    })
     mock_body.read.return_value = json_content.encode('utf-8')
     mock_client.get_object.return_value = {'Body': mock_body}
 
@@ -50,9 +94,43 @@ def test_lambda_handler_default_s3_client(monkeypatch):
 
 
 def test_lambda_handler_with_filter():
-    json_content = '[{"id": 1, "name": "alpha", "value": 100}, ' \
-                    '{"id": 2, "name": "beta", "value": 200}, ' \
-                    '{"id": 3, "name": "gamma", "value": 300}]'
+    json_content = json.dumps({
+        "data_source": "ClarityAI_Dataset",
+        "dataset_type": "Environmental_Risk",
+        "dataset_id": "https://bucket-url",
+        "events": [
+            {
+                "time_object": {"timestamp": "2023-01-01",
+                                "timezone": "GMT+11"},
+                "event_type": "ESG data",
+                "attribute": {
+                    "company_name": "TestCorp",
+                    "metric_name": "CO2DIRECTSCOPE1",
+                    "metric_value": "100"
+                }
+            },
+            {
+                "time_object": {"timestamp": "2023-01-01",
+                                "timezone": "GMT+11"},
+                "event_type": "ESG data",
+                "attribute": {
+                    "company_name": "TestCorp",
+                    "metric_name": "WATERWITHDRAWALTOTAL",
+                    "metric_value": "500"
+                }
+            },
+            {
+                "time_object": {"timestamp": "2023-01-01",
+                                "timezone": "GMT+11"},
+                "event_type": "ESG data",
+                "attribute": {
+                    "company_name": "OtherCorp",
+                    "metric_name": "CO2INDIRECTSCOPE3",
+                    "metric_value": "300"
+                }
+            }
+        ]
+    })
     mock_s3_client = MagicMock()
     mock_body = MagicMock()
     mock_body.read.return_value = json_content.encode('utf-8')
@@ -60,7 +138,7 @@ def test_lambda_handler_with_filter():
 
     event = {
         "queryStringParameters": {
-            "filter": "value > 100"
+            "filter": "metric_value > '200'"
         }
     }
     context = {}
@@ -68,14 +146,40 @@ def test_lambda_handler_with_filter():
 
     parsed = parse_json_response(response['body'])
     assert len(parsed) == 2
-    assert parsed[0]['value'] == 200
-    assert parsed[1]['value'] == 300
+    assert parsed[0]['metric_value'] == '500'
+    assert parsed[1]['metric_value'] == '300'
 
 
 def test_lambda_handler_with_columns():
-    json_content = '[{"id": 1, "name": "alpha", "value": 100}, ' \
-                    '{"id": 2, "name": "beta", "value": 200}, ' \
-                    '{"id": 3, "name": "gamma", "value": 300}]'
+    json_content = json.dumps({
+        "data_source": "ClarityAI_Dataset",
+        "dataset_type": "Environmental_Risk",
+        "dataset_id": "https://bucket-url",
+        "events": [
+            {
+                "time_object": {"timestamp": "2023-01-01",
+                                "timezone": "GMT+11"},
+                "event_type": "ESG data",
+                "attribute": {
+                    "company_name": "TestCorp",
+                    "metric_name": "CO2DIRECTSCOPE1",
+                    "metric_value": "100",
+                    "metric_unit": "Tons CO2e"
+                }
+            },
+            {
+                "time_object": {"timestamp": "2023-01-01",
+                                "timezone": "GMT+11"},
+                "event_type": "ESG data",
+                "attribute": {
+                    "company_name": "OtherCorp",
+                    "metric_name": "WATERWITHDRAWALTOTAL",
+                    "metric_value": "500",
+                    "metric_unit": "Cubic meters"
+                }
+            }
+        ]
+    })
     mock_s3_client = MagicMock()
     mock_body = MagicMock()
     mock_body.read.return_value = json_content.encode('utf-8')
@@ -83,58 +187,7 @@ def test_lambda_handler_with_columns():
 
     event = {
         "queryStringParameters": {
-            "columns": "id,value"
-        }
-    }
-    context = {}
-    response = lambda_handler(event, context, s3_client=mock_s3_client)
-
-    parsed = parse_json_response(response['body'])
-    assert len(parsed) == 3
-    assert 'name' not in parsed[0]
-    assert parsed[0]['value'] == 100
-    assert parsed[1]['value'] == 200
-    assert parsed[2]['value'] == 300
-
-
-def test_lambda_handler_with_order():
-    json_content = '[{"id": 1, "name": "alpha", "value": 100}, ' \
-                    '{"id": 2, "name": "beta", "value": 200}, ' \
-                    '{"id": 3, "name": "gamma", "value": 300}]'
-    mock_s3_client = MagicMock()
-    mock_body = MagicMock()
-    mock_body.read.return_value = json_content.encode('utf-8')
-    mock_s3_client.get_object.return_value = {'Body': mock_body}
-
-    event = {
-        "queryStringParameters": {
-            "order_by": "value desc"
-        }
-    }
-    context = {}
-    response = lambda_handler(event, context, s3_client=mock_s3_client)
-
-    parsed = parse_json_response(response['body'])
-    assert len(parsed) == 3
-    assert parsed[0]['value'] == 300
-    assert parsed[1]['value'] == 200
-    assert parsed[2]['value'] == 100
-
-
-def test_lambda_handler_all_params():
-    json_content = '[{"id": 1, "name": "alpha", "value": 100}, ' \
-                    '{"id": 2, "name": "beta", "value": 200}, ' \
-                    '{"id": 3, "name": "gamma", "value": 300}]'
-    mock_s3_client = MagicMock()
-    mock_body = MagicMock()
-    mock_body.read.return_value = json_content.encode('utf-8')
-    mock_s3_client.get_object.return_value = {'Body': mock_body}
-
-    event = {
-        "queryStringParameters": {
-            "filter": "value > 100",
-            "columns": "id,value",
-            "order_by": "value desc"
+            "columns": "company_name,metric_value"
         }
     }
     context = {}
@@ -142,9 +195,132 @@ def test_lambda_handler_all_params():
 
     parsed = parse_json_response(response['body'])
     assert len(parsed) == 2
-    assert 'name' not in parsed[0]
-    assert parsed[0]['value'] == 300
-    assert parsed[1]['value'] == 200
+    assert 'metric_unit' not in parsed[0]
+    assert 'company_name' in parsed[0]
+    assert 'metric_value' in parsed[0]
+    assert parsed[0]['company_name'] == 'TestCorp'
+    assert parsed[1]['company_name'] == 'OtherCorp'
+
+
+def test_lambda_handler_with_order():
+    json_content = json.dumps({
+        "data_source": "ClarityAI_Dataset",
+        "dataset_type": "Environmental_Risk",
+        "dataset_id": "https://bucket-url",
+        "events": [
+            {
+                "time_object": {"timestamp": "2023-01-01",
+                                "timezone": "GMT+11"},
+                "event_type": "ESG data",
+                "attribute": {
+                    "company_name": "AlphaCorp",
+                    "metric_name": "CO2DIRECTSCOPE1",
+                    "metric_value": "100"
+                }
+            },
+            {
+                "time_object": {"timestamp": "2023-01-01",
+                                "timezone": "GMT+11"},
+                "event_type": "ESG data",
+                "attribute": {
+                    "company_name": "BetaCorp",
+                    "metric_name": "WATERWITHDRAWALTOTAL",
+                    "metric_value": "200"
+                }
+            },
+            {
+                "time_object": {"timestamp": "2023-01-01",
+                                "timezone": "GMT+11"},
+                "event_type": "ESG data",
+                "attribute": {
+                    "company_name": "GammaCorp",
+                    "metric_name": "CO2INDIRECTSCOPE3",
+                    "metric_value": "300"
+                }
+            }
+        ]
+    })
+    mock_s3_client = MagicMock()
+    mock_body = MagicMock()
+    mock_body.read.return_value = json_content.encode('utf-8')
+    mock_s3_client.get_object.return_value = {'Body': mock_body}
+
+    event = {
+        "queryStringParameters": {
+            "order_by": "metric_value desc"
+        }
+    }
+    context = {}
+    response = lambda_handler(event, context, s3_client=mock_s3_client)
+
+    parsed = parse_json_response(response['body'])
+    assert len(parsed) == 3
+    assert parsed[0]['metric_value'] == '300'
+    assert parsed[1]['metric_value'] == '200'
+    assert parsed[2]['metric_value'] == '100'
+
+
+def test_lambda_handler_all_params():
+    json_content = json.dumps({
+        "data_source": "ClarityAI_Dataset",
+        "dataset_type": "Environmental_Risk",
+        "dataset_id": "https://bucket-url",
+        "events": [
+            {
+                "time_object": {"timestamp": "2023-01-01",
+                                "timezone": "GMT+11"},
+                "event_type": "ESG data",
+                "attribute": {
+                    "company_name": "AlphaCorp",
+                    "metric_name": "CO2DIRECTSCOPE1",
+                    "metric_value": "100",
+                    "pillar": "E"
+                }
+            },
+            {
+                "time_object": {"timestamp": "2023-01-01",
+                                "timezone": "GMT+11"},
+                "event_type": "ESG data",
+                "attribute": {
+                    "company_name": "BetaCorp",
+                    "metric_name": "WATERWITHDRAWALTOTAL",
+                    "metric_value": "200",
+                    "pillar": "E"
+                }
+            },
+            {
+                "time_object": {"timestamp": "2023-01-01",
+                                "timezone": "GMT+11"},
+                "event_type": "ESG data",
+                "attribute": {
+                    "company_name": "GammaCorp",
+                    "metric_name": "CO2INDIRECTSCOPE3",
+                    "metric_value": "300",
+                    "pillar": "E"
+                }
+            }
+        ]
+    })
+    mock_s3_client = MagicMock()
+    mock_body = MagicMock()
+    mock_body.read.return_value = json_content.encode('utf-8')
+    mock_s3_client.get_object.return_value = {'Body': mock_body}
+
+    event = {
+        "queryStringParameters": {
+            "filter": "metric_value > '100'",
+            "columns": "company_name,metric_value",
+            "order_by": "metric_value desc"
+        }
+    }
+    context = {}
+    response = lambda_handler(event, context, s3_client=mock_s3_client)
+
+    parsed = parse_json_response(response['body'])
+    assert len(parsed) == 2
+    assert 'pillar' not in parsed[0]
+    assert parsed[0]['metric_value'] == '300'
+    assert parsed[1]['metric_value'] == '200'
 
 
 def test_lambda_handler_error():
@@ -160,9 +336,23 @@ def test_lambda_handler_error():
 
 
 def test_lambda_handler_invalid_filter_param():
-    json_content = '[{"id": 1, "name": "alpha", "value": 100}, ' \
-                    '{"id": 2, "name": "beta", "value": 200}, ' \
-                    '{"id": 3, "name": "gamma", "value": 300}]'
+    json_content = json.dumps({
+        "data_source": "ClarityAI_Dataset",
+        "dataset_type": "Environmental_Risk",
+        "dataset_id": "https://bucket-url",
+        "events": [
+            {
+                "time_object": {"timestamp": "2023-01-01",
+                                "timezone": "GMT+11"},
+                "event_type": "ESG data",
+                "attribute": {
+                    "company_name": "TestCorp",
+                    "metric_name": "CO2DIRECTSCOPE1",
+                    "metric_value": "100"
+                }
+            }
+        ]
+    })
     mock_s3_client = MagicMock()
     mock_body = MagicMock()
     mock_body.read.return_value = json_content.encode('utf-8')
@@ -182,9 +372,23 @@ def test_lambda_handler_invalid_filter_param():
 
 
 def test_lambda_handler_invalid_columns_param():
-    json_content = '[{"id": 1, "name": "alpha", "value": 100}, ' \
-                    '{"id": 2, "name": "beta", "value": 200}, ' \
-                    '{"id": 3, "name": "gamma", "value": 300}]'
+    json_content = json.dumps({
+        "data_source": "ClarityAI_Dataset",
+        "dataset_type": "Environmental_Risk",
+        "dataset_id": "https://bucket-url",
+        "events": [
+            {
+                "time_object": {"timestamp": "2023-01-01",
+                                "timezone": "GMT+11"},
+                "event_type": "ESG data",
+                "attribute": {
+                    "company_name": "TestCorp",
+                    "metric_name": "CO2DIRECTSCOPE1",
+                    "metric_value": "100"
+                }
+            }
+        ]
+    })
     mock_s3_client = MagicMock()
     mock_body = MagicMock()
     mock_body.read.return_value = json_content.encode('utf-8')
@@ -204,9 +408,23 @@ def test_lambda_handler_invalid_columns_param():
 
 
 def test_lambda_handler_invalid_order_by_param():
-    json_content = '[{"id": 1, "name": "alpha", "value": 100}, ' \
-                    '{"id": 2, "name": "beta", "value": 200}, ' \
-                    '{"id": 3, "name": "gamma", "value": 300}]'
+    json_content = json.dumps({
+        "data_source": "ClarityAI_Dataset",
+        "dataset_type": "Environmental_Risk",
+        "dataset_id": "https://bucket-url",
+        "events": [
+            {
+                "time_object": {"timestamp": "2023-01-01",
+                                "timezone": "GMT+11"},
+                "event_type": "ESG data",
+                "attribute": {
+                    "company_name": "TestCorp",
+                    "metric_name": "CO2DIRECTSCOPE1",
+                    "metric_value": "100"
+                }
+            }
+        ]
+    })
     mock_s3_client = MagicMock()
     mock_body = MagicMock()
     mock_body.read.return_value = json_content.encode('utf-8')
@@ -241,9 +459,23 @@ def test_lambda_handler_no_json_content():
 
 
 def test_lambda_handler_no_json_content_after_filtering():
-    json_content = '[{"id": 1, "name": "alpha", "value": 100}, ' \
-                    '{"id": 2, "name": "beta", "value": 200}, ' \
-                    '{"id": 3, "name": "gamma", "value": 300}]'
+    json_content = json.dumps({
+        "data_source": "ClarityAI_Dataset",
+        "dataset_type": "Environmental_Risk",
+        "dataset_id": "https://bucket-url",
+        "events": [
+            {
+                "time_object": {"timestamp": "2023-01-01",
+                                "timezone": "GMT+11"},
+                "event_type": "ESG data",
+                "attribute": {
+                    "company_name": "TestCorp",
+                    "metric_name": "CO2DIRECTSCOPE1",
+                    "metric_value": "100"
+                }
+            }
+        ]
+    })
     mock_s3_client = MagicMock()
     mock_body = MagicMock()
     mock_body.read.return_value = json_content.encode('utf-8')
@@ -251,7 +483,7 @@ def test_lambda_handler_no_json_content_after_filtering():
 
     event = {
         "queryStringParameters": {
-            "filter": "value > 300"
+            "filter": "metric_value > '500'"
         }
     }
     context = {}
@@ -279,16 +511,31 @@ def test_lambda_handler_empty_dataframe_json():
 
 
 def test_lambda_handler_invalid_filter_crashes_query_json():
-    # JSON data simulating valid content
-    json_data = '[{"id": 1, "value": 100}, {"id": 2, "value": 200}]'
+    json_content = json.dumps({
+        "data_source": "ClarityAI_Dataset",
+        "dataset_type": "Environmental_Risk",
+        "dataset_id": "https://bucket-url",
+        "events": [
+            {
+                "time_object": {"timestamp": "2023-01-01",
+                                "timezone": "GMT+11"},
+                "event_type": "ESG data",
+                "attribute": {
+                    "company_name": "TestCorp",
+                    "metric_name": "CO2DIRECTSCOPE1",
+                    "metric_value": "100"
+                }
+            }
+        ]
+    })
 
     mock_s3 = MagicMock()
     mock_body = MagicMock()
-    mock_body.read.return_value = json_data.encode('utf-8')
+    mock_body.read.return_value = json_content.encode('utf-8')
     mock_s3.get_object.return_value = {'Body': mock_body}
 
     # Will crash df.query due to invalid filter syntax
-    event = {"queryStringParameters": {"filter": "value >> 100"}}
+    event = {"queryStringParameters": {"filter": "metric_value >> 100"}}
     response = lambda_handler(event, {}, s3_client=mock_s3)
 
     assert response['statusCode'] == 400
