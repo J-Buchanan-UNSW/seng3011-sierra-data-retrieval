@@ -94,7 +94,7 @@ def lambda_handler(event, _context, s3_client=None):
 
         # Create a list to store the flattened records
         flattened_records = []
-        
+
         # Process each record in the JSON list
         for record in parsed_json:
             if "events" in record:
@@ -113,12 +113,12 @@ def lambda_handler(event, _context, s3_client=None):
                     # Add event_type if it exists
                     if "event_type" in e:
                         flat_record["event_type"] = e["event_type"]
-                    
+
                     # Add attribute fields directly to the flattened record
                     if "attribute" in e:
                         for attr_key, attr_value in e["attribute"].items():
                             flat_record[attr_key] = attr_value
-                    
+
                     flattened_records.append(flat_record)
             else:
                 # Handle case where there are no events - just add the record
@@ -201,14 +201,14 @@ def lambda_handler(event, _context, s3_client=None):
             # Process order_by parts
             order_parts = []
             ascending_flags = []
-            
+
             for item in order_by.split(','):
                 parts = item.strip().split()
                 column = parts[0]
                 direction = parts[1].lower() if len(parts) == 2 else 'asc'
                 order_parts.append(column)
                 ascending_flags.append(direction == 'asc')
-            
+
             df = df.sort_values(by=order_parts, ascending=ascending_flags)
             print(f"✅ Sorting applied. Data sorted by {order_parts}.")
 
