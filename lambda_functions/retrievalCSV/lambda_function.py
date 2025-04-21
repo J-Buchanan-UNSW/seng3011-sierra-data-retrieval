@@ -127,7 +127,8 @@ def lambda_handler(event, _context, s3_client=None):
                 print("❌ Invalid columns parameter.")
                 return {
                     "statusCode": 400,
-                    "body": json.dumps({"error": "Invalid columns parameter"}),
+                    "body": json.dumps({
+                        "error": "Invalid columns expression"}),
                     "headers": {"Content-Type": "application/json"}
                 }
             col_list = [col.strip() for col in columns.split(",")]

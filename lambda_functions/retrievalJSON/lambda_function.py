@@ -57,7 +57,6 @@ def lambda_handler(event, _context, s3_client=None):
         print("🚀 Starting JSON data processing...")
         print("📩 Event received:", json.dumps(event))
 
-        # Use injected client for testing or create a new one
         if s3_client is None:
             s3_client = get_s3_client()
 
@@ -92,13 +91,16 @@ def lambda_handler(event, _context, s3_client=None):
                 "headers": {"Content-Type": "application/json"}
             }
 
-        df = pd.json_normalize(parsed_json, record_path=["events"],
-                               meta=["data_source", "dataset_type",
-                                     "dataset_id"], errors='ignore')
+        if "events" in parsed_json:
+            df = pd.json_normalize(parsed_json, record_path=["events"],
+                                   meta=["data_source", "dataset_type",
+                                         "dataset_id"], errors='ignore')
+        else:
+            df = pd.json_normalize(parsed_json)
 
         # Flatten 'attribute' into individual columns
-        attribute_columns = [col for col in df.columns if
-                             col.startswith("attribute.")]
+        attribute_columns = [col for col in df.columns
+                             if col.startswith("attribute.")]
         df = pd.concat([df.drop(attribute_columns, axis=1),
                         df[attribute_columns].apply(pd.Series)], axis=1)
 
@@ -131,6 +133,23 @@ def lambda_handler(event, _context, s3_client=None):
                     "body": json.dumps({"error": "Invalid filter expression"}),
                     "headers": {"Content-Type": "application/json"}
                 }
+            try:
+                df = df.query(filter_query)
+                print(f"✅ Filtered DataFrame has {len(df)} rows.")
+                if df.empty:
+                    print("⚠️ No results after filtering.")
+                    return {
+                        "statusCode": 400,
+                        "body": json.dumps({"error": "No content found"}),
+                        "headers": {"Content-Type": "application/json"}
+                    }
+            except Exception as e:
+                print(f"❌ Error applying filter: {e}")
+                return {
+                    "statusCode": 400,
+                    "body": json.dumps({"error": "Invalid filter expression"}),
+                    "headers": {"Content-Type": "application/json"}
+                }
 
             # Apply the filter to the DataFrame
             df = df.query(filter_query)
@@ -141,7 +160,8 @@ def lambda_handler(event, _context, s3_client=None):
                 print("❌ Invalid columns")
                 return {
                     "statusCode": 400,
-                    "body": json.dumps({"error": "Invalid columns"}),
+                    "body": json.dumps({
+                        "error": "Invalid columns expression"}),
                     "headers": {"Content-Type": "application/json"}
                 }
 
@@ -149,18 +169,27 @@ def lambda_handler(event, _context, s3_client=None):
             df = df[columns.split(",")]
 
         if order_by:
+            print(f"🔎 Validating and applying order_by: {order_by}")
             if not is_valid_order_by(order_by, valid_columns):
                 print("❌ Invalid order_by")
                 return {
                     "statusCode": 400,
-                    "body": json.dumps({"error": "Invalid order_by"}),
+                    "body": json.dumps({
+                        "error": "Invalid order_by expression"}),
                     "headers": {"Content-Type": "application/json"}
                 }
 
-            # Apply sorting to the DataFrame
-            df = df.sort_values(
-                by=[col.strip() for col in order_by.split(',')],
-                ascending=True)
+            # Split 'value desc' or 'value asc' and apply sorting
+            order_by_parts = order_by.split()
+            column = order_by_parts[0]
+            if len(order_by_parts) > 1:
+                direction = order_by_parts[1].lower()
+            else:
+                direction = 'asc'
+            df = df.sort_values(by=column, ascending=(direction == 'asc'))
+
+            print(f"✅ Sorting applied. Data sorted by {column}" +
+                  f"in {direction} order.")
 
         return {
             "statusCode": 200,

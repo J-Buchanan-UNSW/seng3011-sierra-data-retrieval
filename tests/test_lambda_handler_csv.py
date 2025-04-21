@@ -190,7 +190,7 @@ def test_lambda_handler_invalid_columns_param():
 
     assert response['statusCode'] == 400
     assert response['headers']['Content-Type'] == 'application/json'
-    assert "Invalid columns parameter" in response['body']
+    assert "Invalid columns expression" in response['body']
 
 
 def test_lambda_handler_invalid_order_by_param():
