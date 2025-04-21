@@ -215,7 +215,12 @@ def lambda_handler(event, _context, s3_client=None):
         return {
             "statusCode": 200,
             "body": df.to_json(orient="records"),
-            "headers": {"Content-Type": "application/json"}
+            "headers": {
+                "Content-Type": "text/csv",
+                "Access-Control-Allow-Origin": "*",
+                "Access-Control-Allow-Methods": "OPTIONS, GET, POST",
+                "Access-Control-Allow-Headers": "Content-Type, Authorization"
+            },
         }
 
     except Exception as e:
