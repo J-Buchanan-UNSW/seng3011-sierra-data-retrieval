@@ -13,7 +13,7 @@ def get_s3_client():
 
 # Define S3 bucket and file path
 BUCKET_NAME = os.getenv("BUCKET_NAME", "dev-sierra-e-bucket")
-JSON_FILE_PATH = "processedJSON/environmental_risk.json"
+JSON_FILE_PATH = "processedJSON/master.json"
 
 VALID_OPERATORS = {'==', '!=', '>', '<', '>=', '<='}
 

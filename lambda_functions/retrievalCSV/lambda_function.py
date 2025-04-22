@@ -14,7 +14,7 @@ def get_s3_client():
 
 # Define S3 bucket and file path
 BUCKET_NAME = os.getenv("BUCKET_NAME", "dev-sierra-e-bucket")
-CSV_FILE_PATH = "processedCSV/environmental_risk.csv"
+CSV_FILE_PATH = "processedCSV/master.csv"
 
 VALID_OPERATORS = {'==', '!=', '>', '<', '>=', '<='}
 
