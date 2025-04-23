@@ -54,7 +54,7 @@ def test_lambda_handler_no_params():
     assert response['statusCode'] == 200
     assert response['headers']['Content-Type'] == 'application/json'
 
-    parsed = parse_json_response(response['body'])
+    parsed = parse_json_response(response['body'])['data']
     assert len(parsed) == 2
     assert parsed[0]['company_name'] == 'TestCorp'
     assert parsed[0]['metric_name'] == 'CO2DIRECTSCOPE1'
@@ -144,7 +144,7 @@ def test_lambda_handler_with_filter():
     context = {}
     response = lambda_handler(event, context, s3_client=mock_s3_client)
 
-    parsed = parse_json_response(response['body'])
+    parsed = parse_json_response(response['body'])['data']
     assert len(parsed) == 2
     assert parsed[0]['metric_value'] == '500'
     assert parsed[1]['metric_value'] == '300'
@@ -193,7 +193,7 @@ def test_lambda_handler_with_columns():
     context = {}
     response = lambda_handler(event, context, s3_client=mock_s3_client)
 
-    parsed = parse_json_response(response['body'])
+    parsed = parse_json_response(response['body'])['data']
     assert len(parsed) == 2
     assert 'metric_unit' not in parsed[0]
     assert 'company_name' in parsed[0]
@@ -253,7 +253,7 @@ def test_lambda_handler_with_order():
     context = {}
     response = lambda_handler(event, context, s3_client=mock_s3_client)
 
-    parsed = parse_json_response(response['body'])
+    parsed = parse_json_response(response['body'])['data']
     assert len(parsed) == 3
     assert parsed[0]['metric_value'] == '300'
     assert parsed[1]['metric_value'] == '200'
@@ -316,7 +316,7 @@ def test_lambda_handler_all_params():
     context = {}
     response = lambda_handler(event, context, s3_client=mock_s3_client)
 
-    parsed = parse_json_response(response['body'])
+    parsed = parse_json_response(response['body'])['data']
     assert len(parsed) == 2
     assert 'pillar' not in parsed[0]
     assert parsed[0]['metric_value'] == '300'
